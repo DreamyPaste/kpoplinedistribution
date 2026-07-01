@@ -3,23 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seamless Real-Time Sorted Line Distribution</title>
+    <title>Studio Line Distribution Controller</title>
     <style>
         body {
-            background-color: #000;
+            background-color: #0d0d0d;
             color: #fff;
             font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            box-sizing: border-box;
         }
 
-        /* Fixed Video Canvas container matching 1000281445.png */
-        .video-canvas {
+        h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 22px;
+            color: #ff4757;
+        }
+
+        .instruction {
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* SECTION 1: PANEL DISPLAY (Murni Monitor Layout 1000281445.png) */
+        .panel-display {
             width: 800px;
             height: 450px;
             background-color: #555555;
@@ -31,20 +46,20 @@
             padding: 20px;
             box-sizing: border-box;
             position: relative;
-            border: 2px solid #333;
+            border: 3px solid #222;
+            pointer-events: none; /* MENGUNCI LAYAR DISPLAY AGAR TIDAK BISA DIKLIK */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Flex container mapping out the 5 on top and 4 on bottom split rules */
         .row-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             width: 100%;
             gap: 12px;
-            max-width: 600px; /* Forces wrap cleanly at 5 cards */
+            max-width: 600px;
         }
 
-        /* 4:5 Portrait Card layout matching requested aspect ratio */
         .member-card {
             width: 104px;
             height: 130px;
@@ -59,13 +74,9 @@
             padding: 8px 4px;
             box-sizing: border-box;
             border: 2px solid transparent;
-            cursor: pointer;
-            user-select: none;
-            /* Fast animations for structural sorting slide changes */
             transition: border-color 0.2s ease, box-shadow 0.2s ease, order 0.4s ease-out;
         }
 
-        /* Slow Filling overlay layer */
         .color-fill {
             position: absolute;
             bottom: 0;
@@ -73,11 +84,10 @@
             width: 100%;
             height: 0%;
             opacity: 0.4;
-            pointer-events: none; /* Allows click logic to directly pass to core card */
             z-index: 1;
+            transition: height 0.1s linear;
         }
 
-        /* Activated Singing Glowing frame states */
         .member-card.singing {
             border-color: #ffffff;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
@@ -98,58 +108,133 @@
             text-shadow: 1px 1px 3px #000;
         }
 
-        /* Menu UI panel */
-        .controls {
-            margin-top: 20px;
+        /* SECTION 2: PANEL CONTROL (Tombol Statis, Gak Bakal Gerak) */
+        .panel-control {
+            margin-top: 25px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-width: 100%;
+            max-width: 800px;
+            border: 1px solid #333;
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            gap: 15px;
             align-items: center;
-            background: #222;
-            padding: 12px 25px;
-            border-radius: 8px;
         }
 
-        button {
-            background-color: #ff4757;
+        .control-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Menyeimbangkan baris kedua agar rapi di tengah */
+        @media (min-width: 400px) {
+            .button-grid {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        .singer-btn {
+            background-color: #2c3e50;
+            color: white;
+            border: 2px solid transparent;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            min-width: 110px;
+            text-align: center;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .singer-btn:hover {
+            background-color: #34495e;
+        }
+
+        /* Efek Tombol ketika Member Aktif Menyanyi */
+        .singer-btn.active {
+            background-color: var(--member-color, #ff4757);
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+
+        .system-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 5px;
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .reset-btn {
+            background-color: #555;
             color: white;
             border: none;
-            padding: 8px 18px;
-            font-size: 15px;
+            padding: 8px 16px;
+            font-size: 14px;
             cursor: pointer;
             border-radius: 4px;
             font-weight: bold;
-            transition: background 0.2s;
         }
 
-        button:hover {
-            background-color: #ff6b81;
+        .reset-btn:hover {
+            background-color: #666;
         }
 
-        .instruction {
-            color: #aaa;
-            font-size: 14px;
-            margin-top: 10px;
-            text-align: center;
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            background: #000;
+            padding: 6px 15px;
+            border-radius: 4px;
+            border: 1px solid #333;
         }
     </style>
 </head>
 <body>
 
-    <h2>True Real-Time Line Distribution</h2>
-    <p class="instruction">Click members to start/stop singing. They sort and move live in real-time while remaining perfectly clickable!</p>
+    <h2>Line Distribution Studio</h2>
+    <p class="instruction">Layar display atas terkunci. Tekan tombol nama member di panel control bawah untuk menggerakkan chart secara real-time!</p>
 
-    <div class="video-canvas">
-        <!-- Unified grid wrapper that splits automatically to 5 top / 4 bottom via CSS flex wrapping -->
+    <!-- 1. PANEL DISPLAY (MURNI MONITOR) -->
+    <div class="panel-display">
         <div class="row-container" id="grid-container"></div>
     </div>
 
-    <div class="controls">
-        <div id="timer" style="font-size: 18px; font-weight: bold; min-width: 120px;">Total: 0.0s</div>
-        <button onclick="resetSimulation()">Reset Distribution</button>
+    <!-- 2. PANEL CONTROL (STATIS & INTERAKTIF) -->
+    <div class="panel-control">
+        <div class="control-title">Live Control Pad</div>
+        
+        <div class="button-grid" id="button-container"></div>
+
+        <div class="system-controls">
+            <button class="reset-btn" onclick="resetSimulation()">Reset Data</button>
+            <div id="timer">Total: 0.0s</div>
+        </div>
     </div>
 
     <script>
-        // Full targeted K-Pop member lineup 
+        // Data Member Lengkap
         let members = [
             { id: "therese", name: "Therese", color: "#e74c3c", time: 0 },
             { id: "sunny", name: "Sunny", color: "#2ecc71", time: 0 },
@@ -169,18 +254,17 @@
         let maxLinesValue = 15.0;
 
         const gridContainer = document.getElementById('grid-container');
+        const buttonContainer = document.getElementById('button-container');
+        
         const cardElements = {};
+        const buttonElements = {};
 
-        // Generate elements once into the DOM tree permanently
+        // Inisialisasi Elemen Display & Control secara Terpisah
         members.forEach((member, initialIndex) => {
+            // Pembuatan Card untuk Panel Display (Atas)
             const card = document.createElement('div');
             card.className = 'member-card';
-            card.style.order = initialIndex; // Initial structural placement layout
-            
-            // Native click listener stays attached perfectly without re-rendering loops dropping it
-            card.addEventListener('click', function() {
-                toggleSinger(member.id);
-            });
+            card.style.order = initialIndex;
 
             const fill = document.createElement('div');
             fill.className = 'color-fill';
@@ -197,36 +281,50 @@
             card.appendChild(fill);
             card.appendChild(nameLabel);
             card.appendChild(timeLabel);
-            
             gridContainer.appendChild(card);
             cardElements[member.id] = card;
+
+            // Pembuatan Tombol untuk Panel Control (Bawah)
+            const btn = document.createElement('button');
+            btn.className = 'singer-btn';
+            btn.innerText = member.name;
+            btn.style.setProperty('--member-color', member.color);
+            
+            // Event klik dipasang di tombol kontrol bawah
+            btn.addEventListener('click', function() {
+                toggleSinger(member.id);
+            });
+
+            buttonContainer.appendChild(btn);
+            buttonElements[member.id] = btn;
         });
 
-        // Real-Time layout updater updates times, fills, and adjusts visual sorting order values live
+        // Real-Time Core Updater (Mengatur display atas & status tombol bawah)
         function runRealtimeUpdate() {
-            // Sort array references behind the scenes to map current leaderboard ranking indices
             let sortedRankings = [...members].sort((a, b) => b.time - a.time);
 
             members.forEach(member => {
                 const card = cardElements[member.id];
+                const btn = buttonElements[member.id];
                 
-                // Keep border states synchronized
                 if (activeSingers.has(member.id)) {
                     card.classList.add('singing');
+                    btn.classList.add('active');
                 } else {
                     card.classList.remove('singing');
+                    btn.classList.remove('active');
                 }
 
-                // Update visual color meter levels
+                // Update Tinggi Isian Warna Otomatis
                 const fillElement = card.querySelector('.color-fill');
                 const fillPercentage = totalTime > 0 ? Math.min((member.time / maxLinesValue) * 100, 100) : 0;
                 fillElement.style.height = `${fillPercentage}%`;
 
-                // Live string display ticking
+                // Update Angka Detik Di Monitor Atas
                 const timeElement = card.querySelector('.member-time');
                 timeElement.innerText = member.time.toFixed(1);
 
-                // MAGIC FIX: Dynamically shift CSS visual order based on rank array location
+                // Mengatur Urutan Visual Real-time (5 di atas, 4 di bawah otomatis)
                 let currentVisualRank = sortedRankings.findIndex(m => m.id === member.id);
                 card.style.order = currentVisualRank;
             });
@@ -241,7 +339,7 @@
 
             runRealtimeUpdate();
 
-            // Run clock frames if anyone is engaged
+            // Atur putaran waktu (engine)
             if (activeSingers.size > 0 && !animationFrameId) {
                 lastTime = performance.now();
                 animationFrameId = requestAnimationFrame(updateLoop);
@@ -291,7 +389,7 @@
             runRealtimeUpdate();
         }
 
-        // Initialize display configuration state
+        // Jalankan render awal
         runRealtimeUpdate();
     </script>
 </body>
