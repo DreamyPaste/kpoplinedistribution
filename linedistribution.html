@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seamless Real-Time Sorted Line Distribution</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Fixed Video Canvas container matching 1000281445.png */
+        .video-canvas {
+            width: 800px;
+            height: 450px;
+            background-color: #555555;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            border: 2px solid #333;
+        }
+
+        /* Flex container mapping out the 5 on top and 4 on bottom split rules */
+        .row-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            gap: 12px;
+            max-width: 600px; /* Forces wrap cleanly at 5 cards */
+        }
+
+        /* 4:5 Portrait Card layout matching requested aspect ratio */
+        .member-card {
+            width: 104px;
+            height: 130px;
+            background-color: #222;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            box-sizing: border-box;
+            border: 2px solid transparent;
+            cursor: pointer;
+            user-select: none;
+            /* Fast animations for structural sorting slide changes */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, order 0.4s ease-out;
+        }
+
+        /* Slow Filling overlay layer */
+        .color-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            opacity: 0.4;
+            pointer-events: none; /* Allows click logic to directly pass to core card */
+            z-index: 1;
+        }
+
+        /* Activated Singing Glowing frame states */
+        .member-card.singing {
+            border-color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            z-index: 2;
+        }
+
+        .member-name {
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 2;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .member-time {
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 2;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        /* Menu UI panel */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: #222;
+            padding: 12px 25px;
+            border-radius: 8px;
+        }
+
+        button {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #ff6b81;
+        }
+
+        .instruction {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>True Real-Time Line Distribution</h2>
+    <p class="instruction">Click members to start/stop singing. They sort and move live in real-time while remaining perfectly clickable!</p>
+
+    <div class="video-canvas">
+        <!-- Unified grid wrapper that splits automatically to 5 top / 4 bottom via CSS flex wrapping -->
+        <div class="row-container" id="grid-container"></div>
+    </div>
+
+    <div class="controls">
+        <div id="timer" style="font-size: 18px; font-weight: bold; min-width: 120px;">Total: 0.0s</div>
+        <button onclick="resetSimulation()">Reset Distribution</button>
+    </div>
+
+    <script>
+        // Full targeted K-Pop member lineup 
+        let members = [
+            { id: "therese", name: "Therese", color: "#e74c3c", time: 0 },
+            { id: "sunny", name: "Sunny", color: "#2ecc71", time: 0 },
+            { id: "yonhee", name: "Yonhee", color: "#f1c40f", time: 0 },
+            { id: "krystal", name: "Krystal", color: "#9b59b6", time: 0 },
+            { id: "valentina", name: "Valentina", color: "#e84393", time: 0 },
+            { id: "hayun", name: "Hayun", color: "#3498db", time: 0 },
+            { id: "eunji", name: "Eunji", color: "#fd79a8", time: 0 },
+            { id: "bernadette", name: "Bernadette", color: "#e67e22", time: 0 },
+            { id: "jiyoung", name: "Jiyoung", color: "#1abc9c", time: 0 }
+        ];
+
+        let activeSingers = new Set();
+        let animationFrameId = null;
+        let lastTime = 0;
+        let totalTime = 0;
+        let maxLinesValue = 15.0;
+
+        const gridContainer = document.getElementById('grid-container');
+        const cardElements = {};
+
+        // Generate elements once into the DOM tree permanently
+        members.forEach((member, initialIndex) => {
+            const card = document.createElement('div');
+            card.className = 'member-card';
+            card.style.order = initialIndex; // Initial structural placement layout
+            
+            // Native click listener stays attached perfectly without re-rendering loops dropping it
+            card.addEventListener('click', function() {
+                toggleSinger(member.id);
+            });
+
+            const fill = document.createElement('div');
+            fill.className = 'color-fill';
+            fill.style.backgroundColor = member.color;
+            
+            const nameLabel = document.createElement('div');
+            nameLabel.className = 'member-name';
+            nameLabel.innerText = member.name;
+
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'member-time';
+            timeLabel.innerText = '0.0';
+
+            card.appendChild(fill);
+            card.appendChild(nameLabel);
+            card.appendChild(timeLabel);
+            
+            gridContainer.appendChild(card);
+            cardElements[member.id] = card;
+        });
+
+        // Real-Time layout updater updates times, fills, and adjusts visual sorting order values live
+        function runRealtimeUpdate() {
+            // Sort array references behind the scenes to map current leaderboard ranking indices
+            let sortedRankings = [...members].sort((a, b) => b.time - a.time);
+
+            members.forEach(member => {
+                const card = cardElements[member.id];
+                
+                // Keep border states synchronized
+                if (activeSingers.has(member.id)) {
+                    card.classList.add('singing');
+                } else {
+                    card.classList.remove('singing');
+                }
+
+                // Update visual color meter levels
+                const fillElement = card.querySelector('.color-fill');
+                const fillPercentage = totalTime > 0 ? Math.min((member.time / maxLinesValue) * 100, 100) : 0;
+                fillElement.style.height = `${fillPercentage}%`;
+
+                // Live string display ticking
+                const timeElement = card.querySelector('.member-time');
+                timeElement.innerText = member.time.toFixed(1);
+
+                // MAGIC FIX: Dynamically shift CSS visual order based on rank array location
+                let currentVisualRank = sortedRankings.findIndex(m => m.id === member.id);
+                card.style.order = currentVisualRank;
+            });
+        }
+
+        function toggleSinger(id) {
+            if (activeSingers.has(id)) {
+                activeSingers.delete(id);
+            } else {
+                activeSingers.add(id);
+            }
+
+            runRealtimeUpdate();
+
+            // Run clock frames if anyone is engaged
+            if (activeSingers.size > 0 && !animationFrameId) {
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(updateLoop);
+            } else if (activeSingers.size === 0 && animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        function updateLoop(now) {
+            if (activeSingers.size === 0) {
+                animationFrameId = null;
+                return;
+            }
+
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            totalTime += dt;
+            document.getElementById('timer').innerText = `Total: ${totalTime.toFixed(1)}s`;
+
+            activeSingers.forEach(id => {
+                let member = members.find(m => m.id === id);
+                if (member) {
+                    member.time += dt;
+                    if (member.time > maxLinesValue) {
+                        maxLinesValue = member.time + 5; 
+                    }
+                }
+            });
+
+            runRealtimeUpdate();
+            animationFrameId = requestAnimationFrame(updateLoop);
+        }
+
+        function resetSimulation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            totalTime = 0;
+            maxLinesValue = 15.0;
+            activeSingers.clear();
+            members.forEach(m => m.time = 0);
+            
+            document.getElementById('timer').innerText = `Total: 0.0s`;
+            runRealtimeUpdate();
+        }
+
+        // Initialize display configuration state
+        runRealtimeUpdate();
+    </script>
+</body>
+</html>
