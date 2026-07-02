@@ -2,53 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio Line Distribution Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Line Distribution Studio</title>
     <style>
         body {
             background-color: #0d0d0d;
             color: #fff;
-            font-family: 'Arial', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 12px;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         h2 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 22px;
+            margin: 5px 0 2px 0;
+            font-size: 18px;
             color: #ff4757;
+            text-align: center;
         }
 
         .instruction {
             color: #aaa;
-            font-size: 13px;
-            margin-bottom: 15px;
+            font-size: 11px;
+            margin-bottom: 12px;
             text-align: center;
         }
 
-        /* SECTION 1: PANEL DISPLAY (Murni Monitor Layout 1000281445.png) */
-        .panel-display {
-            width: 800px;
-            height: 450px;
+        /* WRAPPER UNTUK AUTO-SCALING DI HP */
+        .display-wrapper {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16 / 9; /* Menjaga aspek rasio video 1000281445.png tetap sempurna */
+            position: relative;
             background-color: #555555;
+            border: 2px solid #222;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+
+        /* SECTION 1: PANEL DISPLAY (Murni Monitor) */
+        .panel-display {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            padding: 20px;
+            gap: 3.5%;
+            padding: 3%;
             box-sizing: border-box;
-            position: relative;
-            border: 3px solid #222;
-            pointer-events: none; /* MENGUNCI LAYAR DISPLAY AGAR TIDAK BISA DIKLIK */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            pointer-events: none; /* Mengunci total agar aman saat screen record */
         }
 
         .row-container {
@@ -56,25 +66,26 @@
             flex-wrap: wrap;
             justify-content: center;
             width: 100%;
-            gap: 12px;
+            gap: 1.5%;
             max-width: 600px;
         }
 
+        /* KARTU MEMBER MENGGUNAKAN PERSENTASE AGAR FLEXIBEL DI HP */
         .member-card {
-            width: 104px;
-            height: 130px;
+            width: 17%;
+            aspect-ratio: 4 / 5; /* Mempertahankan rasio 4:5 di semua ukuran layar */
             background-color: #222;
-            border-radius: 8px;
+            border-radius: 4px;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 4px;
+            padding: 1.5% 0.5%;
             box-sizing: border-box;
-            border: 2px solid transparent;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, order 0.4s ease-out;
+            border: 1px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s, order 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .color-fill {
@@ -83,145 +94,148 @@
             left: 0;
             width: 100%;
             height: 0%;
-            opacity: 0.4;
+            opacity: 0.45;
             z-index: 1;
             transition: height 0.1s linear;
         }
 
         .member-card.singing {
             border-color: #ffffff;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
             z-index: 2;
         }
 
         .member-name {
-            font-size: 11px;
+            font-size: 1.8vw; /* Font mengecil otomatis menyesuaikan layar monitor */
             font-weight: bold;
             z-index: 2;
-            text-shadow: 1px 1px 3px #000;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        /* Responsivitas font nama untuk layar laptop/tablet */
+        @media (min-width: 600px) {
+            .member-name { font-size: 11px; }
         }
 
         .member-time {
-            font-size: 16px;
+            font-size: 2.6vw;
             font-weight: bold;
             z-index: 2;
-            text-shadow: 1px 1px 3px #000;
+            text-shadow: 1px 1px 2px #000;
         }
 
-        /* SECTION 2: PANEL CONTROL (Tombol Statis, Gak Bakal Gerak) */
+        @media (min-width: 600px) {
+            .member-time { font-size: 16px; }
+        }
+
+        /* SECTION 2: PANEL CONTROL (Sangat Ramah Sentuhan Jari) */
         .panel-control {
-            margin-top: 25px;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 12px;
-            box-width: 100%;
+            width: 100%;
             max-width: 800px;
-            border: 1px solid #333;
+            margin-top: 15px;
+            background: #161616;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #252525;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            align-items: center;
+            gap: 12px;
         }
 
         .control-title {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #888;
-            margin-bottom: 5px;
+            color: #666;
+            text-align: center;
         }
 
+        /* Grid Tombol yang Fleksibel untuk Layar HP */
         .button-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            justify-content: center;
+            grid-template-columns: repeat(3, 1fr); /* 3 kolom pas untuk jempol di HP mode vertikal */
+            gap: 8px;
+            width: 100%;
         }
 
-        /* Menyeimbangkan baris kedua agar rapi di tengah */
-        @media (min-width: 400px) {
+        @media (min-width: 500px) {
             .button-grid {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
+                grid-template-columns: repeat(5, 1fr); /* Otomatis jadi 5 kolom kalau di tablet/mode miring */
             }
         }
 
         .singer-btn {
-            background-color: #2c3e50;
+            background-color: #1f2d3d;
             color: white;
             border: 2px solid transparent;
-            padding: 10px 16px;
-            font-size: 14px;
+            padding: 12px 8px; /* Lebih tebal agar mudah ditekan */
+            font-size: 13px;
             font-weight: bold;
             cursor: pointer;
-            border-radius: 6px;
-            min-width: 110px;
+            border-radius: 8px;
             text-align: center;
             user-select: none;
-            transition: all 0.2s ease;
+            transition: transform 0.1s, background-color 0.2s;
         }
 
-        .singer-btn:hover {
-            background-color: #34495e;
+        /* Efek feedback sentuhan di HP */
+        .singer-btn:active {
+            transform: scale(0.92);
         }
 
-        /* Efek Tombol ketika Member Aktif Menyanyi */
         .singer-btn.active {
             background-color: var(--member-color, #ff4757);
             border-color: #fff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-            transform: scale(0.95);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
         }
 
+        /* Sistem kontrol tombol reset & timer */
         .system-controls {
             display: flex;
             gap: 15px;
             align-items: center;
-            margin-top: 5px;
-            border-top: 1px solid #333;
-            padding-top: 15px;
+            border-top: 1px solid #252525;
+            padding-top: 12px;
             width: 100%;
             justify-content: space-between;
         }
 
         .reset-btn {
-            background-color: #555;
-            color: white;
+            background-color: #333;
+            color: #eee;
             border: none;
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 10px 16px;
+            font-size: 13px;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: bold;
-        }
-
-        .reset-btn:hover {
-            background-color: #666;
         }
 
         #timer {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             background: #000;
-            padding: 6px 15px;
-            border-radius: 4px;
-            border: 1px solid #333;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid #252525;
         }
     </style>
 </head>
 <body>
 
     <h2>Line Distribution Studio</h2>
-    <p class="instruction">Layar display atas terkunci. Tekan tombol nama member di panel control bawah untuk menggerakkan chart secara real-time!</p>
+    <p class="instruction">Monitor atas aman dari sentuhan. Ketuk tombol nama di bawah untuk live control!</p>
 
-    <!-- 1. PANEL DISPLAY (MURNI MONITOR) -->
-    <div class="panel-display">
-        <div class="row-container" id="grid-container"></div>
+    <!-- CONTAINER DISPLAY YANG OTOMATIS MENGIKUTI UKURAN LAYAR HP -->
+    <div class="display-wrapper">
+        <div class="panel-display">
+            <div class="row-container" id="grid-container"></div>
+        </div>
     </div>
 
-    <!-- 2. PANEL CONTROL (STATIS & INTERAKTIF) -->
+    <!-- PANEL UTAMA UNTUK JARI HP -->
     <div class="panel-control">
         <div class="control-title">Live Control Pad</div>
         
@@ -234,7 +248,6 @@
     </div>
 
     <script>
-        // Data Member Lengkap
         let members = [
             { id: "therese", name: "Therese", color: "#e74c3c", time: 0 },
             { id: "sunny", name: "Sunny", color: "#2ecc71", time: 0 },
@@ -259,9 +272,8 @@
         const cardElements = {};
         const buttonElements = {};
 
-        // Inisialisasi Elemen Display & Control secara Terpisah
+        // Setup elemen awal
         members.forEach((member, initialIndex) => {
-            // Pembuatan Card untuk Panel Display (Atas)
             const card = document.createElement('div');
             card.className = 'member-card';
             card.style.order = initialIndex;
@@ -284,13 +296,11 @@
             gridContainer.appendChild(card);
             cardElements[member.id] = card;
 
-            // Pembuatan Tombol untuk Panel Control (Bawah)
             const btn = document.createElement('button');
             btn.className = 'singer-btn';
             btn.innerText = member.name;
             btn.style.setProperty('--member-color', member.color);
             
-            // Event klik dipasang di tombol kontrol bawah
             btn.addEventListener('click', function() {
                 toggleSinger(member.id);
             });
@@ -299,7 +309,6 @@
             buttonElements[member.id] = btn;
         });
 
-        // Real-Time Core Updater (Mengatur display atas & status tombol bawah)
         function runRealtimeUpdate() {
             let sortedRankings = [...members].sort((a, b) => b.time - a.time);
 
@@ -315,16 +324,13 @@
                     btn.classList.remove('active');
                 }
 
-                // Update Tinggi Isian Warna Otomatis
                 const fillElement = card.querySelector('.color-fill');
                 const fillPercentage = totalTime > 0 ? Math.min((member.time / maxLinesValue) * 100, 100) : 0;
                 fillElement.style.height = `${fillPercentage}%`;
 
-                // Update Angka Detik Di Monitor Atas
                 const timeElement = card.querySelector('.member-time');
                 timeElement.innerText = member.time.toFixed(1);
 
-                // Mengatur Urutan Visual Real-time (5 di atas, 4 di bawah otomatis)
                 let currentVisualRank = sortedRankings.findIndex(m => m.id === member.id);
                 card.style.order = currentVisualRank;
             });
@@ -339,7 +345,6 @@
 
             runRealtimeUpdate();
 
-            // Atur putaran waktu (engine)
             if (activeSingers.size > 0 && !animationFrameId) {
                 lastTime = performance.now();
                 animationFrameId = requestAnimationFrame(updateLoop);
@@ -389,7 +394,6 @@
             runRealtimeUpdate();
         }
 
-        // Jalankan render awal
         runRealtimeUpdate();
     </script>
 </body>
